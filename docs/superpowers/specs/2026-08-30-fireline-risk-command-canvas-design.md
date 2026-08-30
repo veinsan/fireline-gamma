@@ -5,7 +5,7 @@
 
 ## 1. Product definition
 
-FIRELINE is a historical decision-support dashboard for exploring wildfire hotspot risk across Kalimantan. It serves two audiences in one coherent experience:
+FIRELINE is a historical decision-support dashboard for exploring satellite-detected thermal anomalies from NASA FIRMS and their analytical risk context across Kalimantan. It serves two audiences in one coherent experience:
 
 - BPBD and field-response stakeholders scanning for historically high-priority hotspots and understanding why they were prioritized.
 - COMPFEST judges and data analysts inspecting the evidence, feature engineering, provenance, and methodological limitations behind the dashboard.
@@ -13,6 +13,8 @@ FIRELINE is a historical decision-support dashboard for exploring wildfire hotsp
 The interface is written in Bahasa Indonesia while retaining standard technical terms such as risk score, exposure, FRP, confidence, feature engineering, and ROC-AUC.
 
 The dashboard is explicitly historical. It must never imply that the displayed hotspots are live incidents. The visible snapshot range is derived from the loaded dataset, currently spanning August 2024 through May 2026.
+
+Throughout the interface, **hotspot** means a satellite-detected thermal anomaly, not a field-verified wildfire. UI copy must not call every record a confirmed fire. `confidence` describes the FIRMS detection algorithm's confidence, FRP is a proxy for radiated thermal energy, and the calculated risk tier is an analytical response-priority tier rather than confirmation of fire occurrence or burned area.
 
 ## 2. Source-of-truth hierarchy
 
@@ -84,7 +86,7 @@ Displayed analytical values are always derived from the loaded and currently fil
 
 The opening thesis is:
 
-> Prioritas bukan sekadar api terbesar, tetapi ancaman terbesar bagi manusia.
+> Prioritas bukan sekadar sinyal termal terbesar, tetapi indikasi ancaman terbesar bagi manusia.
 
 The map is the hero and begins immediately after compact controls and a derived summary rail. Generic marketing-style KPI cards must not displace it.
 
@@ -141,7 +143,9 @@ The selected-hotspot explanation includes:
 - FRP, brightness, and confidence.
 - Distance to nearest school and schools within five kilometres.
 - Intensity score, exposure score, risk score, and risk tier.
-- A contribution bar reflecting the documented 45% intensity and 55% exposure weighting.
+- A contribution bar showing the record's actual weighted components: `0.45 × intensity_score` and `0.55 × exposure_score`.
+
+The contribution bar uses a zero-to-one scale. Its intensity and exposure segments have lengths equal to their weighted component values and sum to the exported `risk_score` with an absolute difference no greater than `1e-9`; any remaining track represents the distance to the maximum score of one. Labels show both component calculations and values. It must not render two fixed 45%/55% segments.
 
 The dashboard uses the already exported scores and tiers as authoritative values. It may validate their relationship during data preparation but must not silently replace them with a different formula.
 
@@ -304,6 +308,7 @@ Primary CSV
 - If external basemap tiles fail, queue, charts, KPIs, and table remain usable.
 - Unknown URL filter values are normalized to valid defaults.
 - No UI state labels historical records as active, current, or real-time.
+- No UI copy presents a FIRMS hotspot as a field-verified wildfire; the map legend and methodology state the thermal-anomaly definition.
 
 ## 13. Accessibility
 
@@ -332,6 +337,7 @@ Primary CSV
 - URL parameters restore a shared filter state.
 - Risk Lens changes preserve viewport and selection.
 - Map and queue selection remain synchronized.
+- Each selected record's contribution segments equal `0.45 × intensity_score` and `0.55 × exposure_score`, and their sum differs from `risk_score` by no more than `1e-9`.
 - KPI values change with filters and are never read from constants.
 - Modeling content is absent from `/` and confined to a compact appendix in `/methodology`.
 
