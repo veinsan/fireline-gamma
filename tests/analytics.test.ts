@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  aggregateMonthly, applyFilters, deriveSummary, weightedContributions,
+  aggregateExposure, aggregateMonthly, aggregateProvinceTiers, applyFilters, deriveSummary, paginate, sortHotspots, weightedContributions,
 } from "@/lib/fireline/analytics";
 import { loadDashboardData } from "@/lib/fireline/data";
 import { parseFilters, serializeFilters } from "@/lib/fireline/url-state";
@@ -82,4 +82,27 @@ test("rejects malformed metadata and partition count mismatches", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+
+test("bins exposure distance without double counting boundaries", () => {
+  const rows = [
+    hotspot({ id: 1, schoolDistanceKm: 0.5 }),
+    hotspot({ id: 2, schoolDistanceKm: 1 }),
+    hotspot({ id: 3, schoolDistanceKm: 5 }),
+    hotspot({ id: 4, schoolDistanceKm: 10 }),
+  ];
+  assert.deepEqual(aggregateExposure(rows).map((bin) => bin.count), [1, 1, 1, 1]);
+});
+
+test("sorts priority descending and paginates deterministically", () => {
+  const rows = [hotspot({ id: 1, riskScore: 0.2 }), hotspot({ id: 2, riskScore: 0.8 })];
+  const sorted = sortHotspots(rows, "risk");
+  assert.deepEqual(sorted.map((row) => row.id), [2, 1]);
+  assert.deepEqual(paginate(sorted, 1, 1).rows.map((row) => row.id), [2]);
+});
+
+test("province aggregation always exposes all four risk tiers", () => {
+  const [province] = aggregateProvinceTiers([hotspot({ riskTier: "Kritis" })]);
+  assert.deepEqual(province, { province: "KALIMANTAN BARAT", Kritis: 1, Tinggi: 0, Sedang: 0, Rendah: 0 });
 });

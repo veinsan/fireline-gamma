@@ -67,3 +67,13 @@ export function paginate<T>(rows: T[], page: number, size: number) {
   const safePage = Math.min(Math.max(1, page), pageCount);
   return { rows: rows.slice((safePage - 1) * size, safePage * size), page: safePage, pageCount };
 }
+
+export function aggregateProvinceTiers(rows: Hotspot[]) {
+  const provinces = new Map<string, { province: string; Kritis: number; Tinggi: number; Sedang: number; Rendah: number }>();
+  for (const row of rows) {
+    const current = provinces.get(row.province) ?? { province: row.province, Kritis: 0, Tinggi: 0, Sedang: 0, Rendah: 0 };
+    current[row.riskTier]++;
+    provinces.set(row.province, current);
+  }
+  return [...provinces.values()].sort((a, b) => a.province.localeCompare(b.province));
+}
