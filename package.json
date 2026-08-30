@@ -11,7 +11,10 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.*"
+    "test": "node --import tsx --test tests/*.test.*",
+    "prepare:data": "node scripts/prepare-dashboard-data.mjs",
+    "predev": "npm run prepare:data",
+    "prebuild": "npm run prepare:data"
   },
   "dependencies": {
     "maplibre-gl": "^5.24.0",
