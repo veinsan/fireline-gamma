@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   aggregateMonthly, applyFilters, deriveSummary, weightedContributions,
 } from "@/lib/fireline/analytics";
+import { loadDashboardData } from "@/lib/fireline/data";
 import { parseFilters, serializeFilters } from "@/lib/fireline/url-state";
 import type { DashboardMetadata, Hotspot } from "@/lib/fireline/types";
 
@@ -56,4 +57,29 @@ test("normalizes invalid URL filters to dataset bounds", () => {
   assert.equal(filters.from, metadata.minDate);
   assert.equal(filters.province, "all");
   assert.equal(parseFilters(serializeFilters(filters), metadata).to, metadata.maxDate);
+});
+
+test("normalizes malformed calendar URL dates to dataset bounds", () => {
+  const filters = parseFilters(new URLSearchParams("from=2024-08-01junk&to=2024-99-99"), metadata);
+  assert.equal(filters.from, metadata.minDate);
+  assert.equal(filters.to, metadata.maxDate);
+});
+
+test("rejects malformed metadata and partition count mismatches", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      ...metadata, recordCount: 1, minDate: "2024-99-99", partitions: [],
+    }));
+    await assert.rejects(loadDashboardData(), /Invalid dashboard metadata/);
+
+    globalThis.fetch = async (url) => new Response(JSON.stringify(
+      String(url) === "/data/metadata.json"
+        ? { ...metadata, years: [2024], recordCount: 2, partitions: [{ year: 2024, count: 1, url: "/data/hotspots-2024.json" }] }
+        : [[1, "2024-08-01", "2024-08-01 05:45:00", "KALIMANTAN BARAT", -2, 110, 10, 335, "Nominal", "D", 2, 3, 4_000_000, 0.4, 0.6, 0.51, "Tinggi"]],
+    ));
+    await assert.rejects(loadDashboardData(), /record count/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

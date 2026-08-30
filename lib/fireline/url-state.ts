@@ -4,6 +4,13 @@ const tiers = new Set<RiskTier>(["Kritis", "Tinggi", "Sedang", "Rendah"]);
 const confidence = new Set<Confidence>(["Low", "Nominal", "High"]);
 const dayNight = new Set<DayNight>(["D", "N"]);
 
+function isDate(value: string | null): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 export function parseFilters(params: URLSearchParams, meta: DashboardMetadata): FilterState {
   const fromValue = params.get("from");
   const toValue = params.get("to");
@@ -11,8 +18,8 @@ export function parseFilters(params: URLSearchParams, meta: DashboardMetadata): 
   const tierValue = params.get("tier") as RiskTier | null;
   const confidenceValue = params.get("confidence") as Confidence | null;
   const dayNightValue = params.get("dayNight") as DayNight | null;
-  const from = fromValue && fromValue >= meta.minDate && fromValue <= meta.maxDate ? fromValue : meta.minDate;
-  const to = toValue && toValue >= from && toValue <= meta.maxDate ? toValue : meta.maxDate;
+  const from = isDate(fromValue) && fromValue >= meta.minDate && fromValue <= meta.maxDate ? fromValue : meta.minDate;
+  const to = isDate(toValue) && toValue >= from && toValue <= meta.maxDate ? toValue : meta.maxDate;
   return {
     from,
     to,
