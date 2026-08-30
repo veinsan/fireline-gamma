@@ -12,6 +12,7 @@ const DAY_NIGHT = new Set(["D", "N"]);
 const SCORE_TOLERANCE = 1e-9;
 
 function finite(value, name, rowNumber) {
+  if (!value.trim()) throw new Error("row " + rowNumber + ": invalid " + name);
   const number = Number(value);
   if (!Number.isFinite(number)) throw new Error("row " + rowNumber + ": invalid " + name);
   return number;

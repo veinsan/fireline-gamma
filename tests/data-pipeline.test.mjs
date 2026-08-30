@@ -16,6 +16,11 @@ test("parses the repository schema into a normalized hotspot", () => {
   assert.equal(hotspot.frp, 32.35);
 });
 
+test("rejects blank numeric fields", () => {
+  const blankFrp = row.replace(",32.35,", ",,");
+  assert.throws(() => parseHotspotsCsv(header + "\n" + blankFrp), /invalid frp/);
+});
+
 test("uses actual weighted components and validates their sum", () => {
   const [hotspot] = parseHotspotsCsv(header + "\n" + row);
   const parts = weightedParts(hotspot);
