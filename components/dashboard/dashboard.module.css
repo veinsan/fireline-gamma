@@ -46,4 +46,3 @@
 @media (max-width: 1023px) { .workspace { grid-template-columns: minmax(0, 1fr) 320px; } .controls { grid-template-columns: repeat(3, 1fr); } .thesis { grid-template-columns: 1fr; gap: 16px; } }
 @media (max-width: 767px) { .dashboard { padding-top: 10px; } .summaryRail, .workspace { grid-template-columns: 1fr; } .summaryRail { grid-template-columns: 1fr 1fr; } .desktopFilters { display: none; } .mobileFilterButton { display: inline-flex; } .reservedPanel { min-height: 420px; } .reservedQueue { min-height: 160px; } .filterBar { top: 6px; } }
 @media (max-width: 480px) { .summaryRail { grid-template-columns: 1fr; } .filterDialog .controls { grid-template-columns: 1fr; } .thesis h1 { font-size: clamp(2.25rem, 14vw, 3.5rem); } }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
