@@ -1,0 +1,59 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  aggregateMonthly, applyFilters, deriveSummary, weightedContributions,
+} from "@/lib/fireline/analytics";
+import { parseFilters, serializeFilters } from "@/lib/fireline/url-state";
+import type { DashboardMetadata, Hotspot } from "@/lib/fireline/types";
+
+function hotspot(overrides: Partial<Hotspot> = {}): Hotspot {
+  return {
+    id: 1, date: "2024-08-01", timestamp: "2024-08-01 05:45:00",
+    province: "KALIMANTAN BARAT", latitude: -2, longitude: 110,
+    frp: 10, brightness: 335, confidence: "Nominal", dayNight: "D",
+    schoolDistanceKm: 2, schoolsWithin5Km: 3, provincePopulation: 4_000_000,
+    intensityScore: 0.4, exposureScore: 0.6, riskScore: 0.51, riskTier: "Tinggi",
+    ...overrides,
+  };
+}
+
+const metadata: DashboardMetadata = {
+  schemaVersion: 1, recordCount: 2, minDate: "2024-08-01", maxDate: "2026-05-31",
+  provinces: ["KALIMANTAN BARAT", "KALIMANTAN TIMUR"], years: [2024, 2026], partitions: [],
+};
+
+test("one filter set drives the shared record subset", () => {
+  const rows = [hotspot(), hotspot({ id: 2, province: "KALIMANTAN TIMUR", riskTier: "Rendah" })];
+  const result = applyFilters(rows, {
+    from: metadata.minDate, to: metadata.maxDate, province: "KALIMANTAN BARAT",
+    tier: "all", confidence: "all", dayNight: "all",
+  });
+  assert.deepEqual(result.map((row) => row.id), [1]);
+});
+
+test("derives KPI values from records", () => {
+  const summary = deriveSummary([hotspot(), hotspot({ id: 2, frp: 20, schoolDistanceKm: 8, riskTier: "Rendah" })]);
+  assert.deepEqual(summary, { total: 2, priorityCount: 1, medianFrp: 15, within5KmPercent: 50 });
+});
+
+test("builds seasonal monthly counts from acq_date", () => {
+  const trend = aggregateMonthly([hotspot(), hotspot({ id: 2, date: "2024-11-02" })]);
+  assert.deepEqual(trend, [
+    { month: "2024-08", count: 1, drySeason: true },
+    { month: "2024-11", count: 1, drySeason: false },
+  ]);
+});
+
+test("computes actual weighted contributions", () => {
+  const parts = weightedContributions(hotspot());
+  assert.ok(Math.abs(parts.intensity - 0.18) <= 1e-12);
+  assert.ok(Math.abs(parts.exposure - 0.33) <= 1e-12);
+  assert.ok(Math.abs(parts.total - 0.51) <= 1e-12);
+});
+
+test("normalizes invalid URL filters to dataset bounds", () => {
+  const filters = parseFilters(new URLSearchParams("from=nope&province=UNKNOWN"), metadata);
+  assert.equal(filters.from, metadata.minDate);
+  assert.equal(filters.province, "all");
+  assert.equal(parseFilters(serializeFilters(filters), metadata).to, metadata.maxDate);
+});
