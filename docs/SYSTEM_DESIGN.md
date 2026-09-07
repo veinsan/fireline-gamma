@@ -732,7 +732,7 @@ Flutter App ──► Cloudflare (WAF/Rate Limit) ──► FastAPI Backend ─�
 | **Redis**                | Caching layer untuk data yang sering diakses + pub/sub                     | **Redis** (in-memory, latensi rendah)                         |
 | **PostgreSQL + PostGIS** | Database utama dengan spatial extension untuk query geospasial             | **PostgreSQL + PostGIS** (GiST index, spatial join)           |
 | **Cloudflare R2**        | Object storage untuk raw data archive                                      | **Cloudflare R2** (S3-compatible, tanpa biaya egress)         |
-| **Firebase FCM**         | Push notification delivery ke perangkat user                               | **Firebase Cloud Messaging** (topic-based, lintas platform)   |
+| **Firebase FCM**         | Push notification delivery ke perangkat user                               | **Firebase Cloud Messaging** (lintas platform)                |
 
 ### 5.4 Risk Scoring Formula
 
